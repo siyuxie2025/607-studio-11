@@ -140,18 +140,6 @@ class GaussianMixtureModelVectorized:
         """
         n_samples = X.shape[0]
         responsibilities = np.zeros((n_samples, self.n_components))
-        
-        # # For each data point
-        # for i in range(n_samples):
-        #     # For each component
-        #     for k in range(self.n_components):
-        #         # Compute π_k * N(x_i | μ_k, Σ_k)
-        #         try:
-        #             pdf_value = multivariate_normal.pdf(X[i], mean=self.mu_[k], cov=self.cov_[k])
-        #             responsibilities[i, k] = self.pi_[k] * pdf_value
-        #         except np.linalg.LinAlgError:
-        #             # Covariance became singular
-        #             responsibilities[i, k] = 0.0
 
         # Vectorized computation
         for k in range(self.n_components):
@@ -164,15 +152,6 @@ class GaussianMixtureModelVectorized:
                 responsibilities[:, k] = np.exp(log_responsibilities_k)
             except np.linalg.LinAlgError:
                 responsibilities[:, k] = 0.0
-
-        # # Normalize each row to sum to 1
-        # for i in range(n_samples):
-        #     row_sum = responsibilities[i, :].sum()
-        #     if row_sum > 0:
-        #         responsibilities[i, :] /= row_sum
-        #     else:
-        #         # If all responsibilities are 0, assign uniformly
-        #         responsibilities[i, :] = 1.0 / self.n_components
 
         # Normalize responsibilities
         row_sums_responsibilities = responsibilities.sum(axis=1, keepdims=True)
@@ -198,34 +177,6 @@ class GaussianMixtureModelVectorized:
         mu_new = []
         cov_new = []
         pi_new = np.zeros(self.n_components)
-        
-        # # For each component
-        # for k in range(self.n_components):
-        #     # Compute N_k = sum of responsibilities for component k
-        #     N_k = 0.0
-        #     for i in range(n_samples):
-        #         N_k += responsibilities[i, k]
-            
-        #     # Update mixing proportion
-        #     pi_new[k] = N_k / n_samples
-            
-        #     # Update mean
-        #     mu_k = np.zeros(n_features)
-        #     for i in range(n_samples):
-        #         mu_k += responsibilities[i, k] * X[i]
-        #     mu_k /= N_k
-        #     mu_new.append(mu_k)
-            
-        #     # Update covariance
-        #     cov_k = np.zeros((n_features, n_features))
-        #     for i in range(n_samples):
-        #         diff = X[i] - mu_k
-        #         cov_k += responsibilities[i, k] * np.outer(diff, diff)
-        #     cov_k /= N_k
-            
-        #     # Add small regularization to prevent singularity
-        #     cov_k += 1e-6 * np.eye(n_features)
-        #     cov_new.append(cov_k)
 
         # Vectorized computation
         Nk = np.sum(responsibilities, axis=0)  # shape (n_components,)
@@ -255,27 +206,6 @@ class GaussianMixtureModelVectorized:
         """
         n_samples = X.shape[0]
         log_likelihood = 0.0
-        
-        # for i in range(n_samples):
-        #     # Compute p(x_i) = Σ_k π_k * N(x_i | μ_k, Σ_k)
-        #     point_likelihood = 0.0
-        #     for k in range(self.n_components):
-        #         try:
-        #             pdf_value = multivariate_normal.pdf(X[i], mean=self.mu_[k], cov=self.cov_[k])
-        #             point_likelihood += self.pi_[k] * pdf_value
-        #         except np.linalg.LinAlgError:
-        #             pass
-            
-        #     # Add log(p(x_i)) to total
-        #     log_likelihood += np.log(point_likelihood)
-
-        # Vectorized computation
-        # for k in range(self.n_components):
-        #     try:
-        #         pdf_values = multivariate_normal.pdf(X, mean=self.mu_[k], cov=self.cov_[k])
-        #         log_likelihood += np.log(self.pi_[k] * pdf_values + 1e-10)  # add small value to avoid log(0)
-        #     except np.linalg.LinAlgError:
-        #         pass
 
         pdf_values = np.zeros((n_samples, self.n_components)) 
         weighted_pdfs = np.zeros((n_samples, self.n_components))
